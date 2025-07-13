@@ -7,7 +7,35 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 # --- Page config ---
 st.set_page_config(page_title="ATS Resume Match", layout="wide")
-st.markdown("<h1 style='text-align: center;'>📄 ATS Resume Match Scorer</h1>", unsafe_allow_html=True)
+
+# --- Custom Header (No Default Title) ---
+st.markdown("""
+    <style>
+        header {visibility: hidden;}
+        .custom-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #f0f2f6;
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .header-title {
+            font-size: 24px;
+            font-weight: bold;
+        }
+    </style>
+    <div class="custom-header">
+        <div class="header-title">📄 ATS Resume Match Scorer</div>
+        <div>
+            <form action="#" method="post">
+                <button type="submit" name="about">📘 About</button>
+                <button type="submit" name="contact">📬 Contact</button>
+            </form>
+        </div>
+    </div>
+""", unsafe_allow_html=True)
 
 # --- Session state for popups ---
 if "show_about" not in st.session_state:
@@ -15,7 +43,7 @@ if "show_about" not in st.session_state:
 if "show_contact" not in st.session_state:
     st.session_state.show_contact = False
 
-# --- Header Buttons ---
+# --- Manual Toggle Buttons ---
 colA1, colA2, colA3 = st.columns([5, 1, 1])
 with colA2:
     if st.button("📘 About"):
@@ -25,6 +53,21 @@ with colA3:
     if st.button("📬 Contact"):
         st.session_state.show_contact = not st.session_state.show_contact
         st.session_state.show_about = False
+
+# --- Theme Toggle ---
+theme = st.selectbox("🌗 Select Theme", ["Light", "Dark"])
+if theme == "Dark":
+    st.markdown(
+        """<style>
+            .main {
+                background-color: #1e1e1e;
+                color: white;
+            }
+            div.stButton > button {
+                color: black;
+            }
+        </style>""", unsafe_allow_html=True
+    )
 
 # --- About Popup ---
 if st.session_state.show_about:
