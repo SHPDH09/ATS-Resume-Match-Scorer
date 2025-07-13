@@ -51,12 +51,12 @@ if st.session_state.show_contact:
 # --- Load vectorizer ---
 @st.cache_resource
 def load_vectorizer():
-    return joblib.load(r"C:\Users\rauna\Desktop\Research and analysis\vectorizer.pkl")
+    return joblib.load("vectorizer.pkl")
 
 # --- Load and clean job dataset ---
 @st.cache_data
 def load_job_dataset():
-    df = pd.read_csv(r"C:\Users\rauna\Desktop\Research and analysis\careers.csv")
+    df = pd.read_csv("careers.csv")
     df.columns = df.columns.str.strip().str.lower()
     return df
 
