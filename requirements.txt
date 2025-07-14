@@ -1,6 +1,7 @@
 streamlit
 pandas
-PyPDF2
 joblib
+PyPDF2
 scikit-learn
-openpyxl
+gspread
+oauth2client
