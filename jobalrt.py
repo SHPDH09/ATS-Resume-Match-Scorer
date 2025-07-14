@@ -13,11 +13,14 @@ from oauth2client.service_account import ServiceAccountCredentials
 
 # --- Google Sheets Logging ---
 def append_to_google_sheet(data):
-    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    creds = ServiceAccountCredentials.from_json_keyfile_name("creds.json", scope)
-    client = gspread.authorize(creds)
-    sheet = client.open_by_key("1k3Iys5lD26VjqNUGyhB2FlK4NSkDN4vHaHMyKvNPR5g").sheet1
-    sheet.append_row(data)
+    try:
+        scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+        creds = ServiceAccountCredentials.from_json_keyfile_name("creds.json", scope)
+        client = gspread.authorize(creds)
+        sheet = client.open_by_key("1k3Iys5lD26VjqNUGyhB2FlK4NSkDN4vHaHMyKvNPR5g").sheet1
+        sheet.append_row(data)
+    except Exception as e:
+        st.warning(f"⚠️ Visitor log failed: {e}")
 
 def log_visitor_info():
     try:
@@ -29,11 +32,8 @@ def log_visitor_info():
     time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     device = "Mobile" if any(x in sys_info.lower() for x in ["android", "iphone"]) else "PC"
     row = [time, ip, sys_name, sys_info, device]
-    try:
-        append_to_google_sheet(row)
-        st.success("✅ Visitor logged successfully.")
-    except Exception as e:
-        print("Logging error:", e)
+    append_to_google_sheet(row)
+    st.success("✅ Visitor logged successfully.")
 
 log_visitor_info()
 
@@ -175,16 +175,25 @@ with col2:
                     "score": round(sim * 100, 2),
                     "apply_link": row["apply_link"]
                 })
+
             top_matches = sorted(scores, key=lambda x: x["score"], reverse=True)[:10]
+
             if top_matches:
                 st.subheader("📌 Top Matches")
-                for job in top_matches:
-                    st.markdown(f"""
-                    ### 🧑‍💼 {job['title']}
-                    **🏢 {job['company']}**  
-                    🔗 [Apply Now]({job['apply_link']})  
-                    📊 **ATS Score: {job['score']}%**  
-                    ---""")
+                for i in range(0, len(top_matches), 3):
+                    cols = st.columns(3)
+                    for j in range(3):
+                        if i + j < len(top_matches):
+                            job = top_matches[i + j]
+                            with cols[j]:
+                                st.markdown(f"""
+                                    <div style="background-color: #f9f9f9; padding: 15px; border-radius: 8px; box-shadow: 2px 2px 8px rgba(0,0,0,0.05);">
+                                        <h5 style="margin-bottom: 5px;">🧑‍💼 {job['title']}</h5>
+                                        <p style="margin: 0;"><b>🏢 {job['company']}</b></p>
+                                        <p style="margin: 0;">📊 ATS Score: <b>{job['score']}%</b></p>
+                                        <a href="{job['apply_link']}" target="_blank" style="color: blue;">🔗 Apply Now</a>
+                                    </div>
+                                """, unsafe_allow_html=True)
             else:
                 st.warning("No roles matched your resume.")
 
