@@ -52,20 +52,43 @@ def get_visitor_info():
         }
 
 def log_visitor_info():
-    info = get_visitor_info()
-    log_file = "visitor_logs.xlsx"
     try:
-        df = pd.read_excel(log_file)
-    except FileNotFoundError:
-        df = pd.DataFrame(columns=["Timestamp", "IP Address", "Device", "Host Name"])
+        ip_address = socket.gethostbyname(socket.gethostname())
+    except:
+        ip_address = "Unknown"
 
-    df = pd.concat([df, pd.DataFrame([info])], ignore_index=True)
-    log_file = "visitor_logs.csv"
-    df.to_csv(log_file, index=False)
+    system_name = platform.node()
+    system_info = platform.platform()
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    log_data = {
+        "IP Address": [ip_address],
+        "System Name": [system_name],
+        "System Info": [system_info],
+        "Time": [timestamp]
+    }
+
+    df = pd.DataFrame(log_data)
+
+    # ✅ Use a temporary folder for deployment-safe writing
+    log_file = "/tmp/visitor_logs.xlsx"  # or use .csv
+
+    if os.path.exists(log_file):
+        old_df = pd.read_excel(log_file)
+        df = pd.concat([old_df, df], ignore_index=True)
+
+    df.to_excel(log_file, index=False)  # requires openpyxl
+    st.success("✅ Visitor data stored successfully.")
+
 
 
 # --- Log the current visitor ---
 log_visitor_info()
+
+
+
+
+
 
 # --- Custom Header ---
 st.markdown(f"""
