@@ -5,11 +5,14 @@ import PyPDF2
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import os
+import socket
+import platform
+from datetime import datetime
 
 # --- Page config ---
 st.set_page_config(page_title="ATS Resume Match", layout="wide")
 
-# --- Visitor Counter Function (define first) ---
+# --- Visitor Counter ---
 def update_visit_count():
     count_file = "visits.txt"
     if not os.path.exists(count_file):
@@ -23,8 +26,44 @@ def update_visit_count():
         f.truncate()
     return count
 
-# --- Count Visits ---
 visit_count = update_visit_count()
+
+# --- Get Visitor Info and Log to Excel ---
+def get_visitor_info():
+    try:
+        hostname = socket.gethostname()
+        ip_address = socket.gethostbyname(hostname)
+        system_name = platform.system()
+        device_type = "Mobile" if any(x in system_name.lower() for x in ["android", "iphone"]) else "PC"
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        return {
+            "Timestamp": timestamp,
+            "IP Address": ip_address,
+            "Device": device_type,
+            "Host Name": hostname
+        }
+    except:
+        return {
+            "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "IP Address": "Unknown",
+            "Device": "Unknown",
+            "Host Name": "Unknown"
+        }
+
+def log_visitor_info():
+    info = get_visitor_info()
+    log_file = "visitor_logs.xlsx"
+    try:
+        df = pd.read_excel(log_file)
+    except FileNotFoundError:
+        df = pd.DataFrame(columns=["Timestamp", "IP Address", "Device", "Host Name"])
+
+    df = pd.concat([df, pd.DataFrame([info])], ignore_index=True)
+    df.to_excel(log_file, index=False)
+
+# --- Log the current visitor ---
+log_visitor_info()
 
 # --- Custom Header ---
 st.markdown(f"""
