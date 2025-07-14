@@ -4,11 +4,15 @@ import joblib
 import PyPDF2
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+import os
+
 
 # --- Page config ---
 st.set_page_config(page_title="ATS Resume Match", layout="wide")
 
 # --- Custom Header (No Default Title) ---
+visit_count = update_visit_count()
+
 st.markdown("""
     <style>
         header {visibility: hidden;}
@@ -33,6 +37,12 @@ st.markdown("""
                 <button type="submit" name="about">📘 About</button>
                 <button type="submit" name="contact">📬 Contact</button>
             </form>
+        </div>
+    </div>
+    <div class="custom-header">
+        <div class="header-title">📄 ATS Resume Match Scorer</div>
+        <div>
+            <span style='font-size:16px; float:right;'>👀 Total Visits: <b>{visit_count}</b></span>
         </div>
     </div>
 """, unsafe_allow_html=True)
@@ -100,6 +110,19 @@ def load_job_dataset():
     df = pd.read_csv("careers.csv")
     df.columns = df.columns.str.strip().str.lower()
     return df
+#--------------------------------------visitor counter----------------
+def update_visit_count():
+    count_file = "visits.txt"
+    if not os.path.exists(count_file):
+        with open(count_file, "w") as f:
+            f.write("0")
+    with open(count_file, "r+") as f:
+        count = int(f.read().strip())
+        count += 1
+        f.seek(0)
+        f.write(str(count))
+        f.truncate()
+    return count
 
 # --- Resume Extractor ---
 def extract_text_from_pdf(uploaded_file):
