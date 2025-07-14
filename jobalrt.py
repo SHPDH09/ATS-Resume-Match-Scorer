@@ -60,7 +60,9 @@ def log_visitor_info():
         df = pd.DataFrame(columns=["Timestamp", "IP Address", "Device", "Host Name"])
 
     df = pd.concat([df, pd.DataFrame([info])], ignore_index=True)
-    df.to_excel(log_file, index=False)
+    log_file = "visitor_logs.csv"
+    df.to_csv(log_file, index=False)
+
 
 # --- Log the current visitor ---
 log_visitor_info()
