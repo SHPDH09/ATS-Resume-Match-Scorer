@@ -11,7 +11,7 @@ from datetime import datetime
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
-# --- Google Sheets Setup ---
+# --- Google Sheets Logging ---
 def append_to_google_sheet(data):
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
     creds = ServiceAccountCredentials.from_json_keyfile_name("creds.json", scope)
@@ -19,7 +19,6 @@ def append_to_google_sheet(data):
     sheet = client.open_by_key("1k3Iys5lD26VjqNUGyhB2FlK4NSkDN4vHaHMyKvNPR5g").sheet1
     sheet.append_row(data)
 
-# --- Log Visitor Info ---
 def log_visitor_info():
     try:
         ip = socket.gethostbyname(socket.gethostname())
@@ -30,12 +29,15 @@ def log_visitor_info():
     time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     device = "Mobile" if any(x in sys_info.lower() for x in ["android", "iphone"]) else "PC"
     row = [time, ip, sys_name, sys_info, device]
-    append_to_google_sheet(row)
-    st.success("Welcome! Visitor data stored.")
+    try:
+        append_to_google_sheet(row)
+        st.success("✅ Visitor logged successfully.")
+    except Exception as e:
+        print("Logging error:", e)
 
 log_visitor_info()
 
-# --- Visitor Count ---
+# --- Visitor Counter ---
 def update_visit_count():
     count_file = "visits.txt"
     if not os.path.exists(count_file):
@@ -51,7 +53,7 @@ def update_visit_count():
 
 visit_count = update_visit_count()
 
-# --- Streamlit Page Setup ---
+# --- Streamlit Config ---
 st.set_page_config(page_title="ATS Resume Match", layout="wide")
 
 st.markdown(f"""
@@ -70,7 +72,7 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-# --- Toggle Panels ---
+# --- Toggle Buttons ---
 if "show_about" not in st.session_state: st.session_state.show_about = False
 if "show_contact" not in st.session_state: st.session_state.show_contact = False
 col1, col2, col3 = st.columns([5, 1, 1])
@@ -79,21 +81,22 @@ with col2:
 with col3:
     if st.button("📬 Contact"): st.session_state.show_contact, st.session_state.show_about = not st.session_state.show_contact, False
 
-# --- Theme ---
+# --- Theme Switch ---
 theme = st.selectbox("🌗 Select Theme", ["Light", "Dark"])
 if theme == "Dark":
     st.markdown("""
         <style>
-            .main {{ background-color: #1e1e1e; color: white; }}
-            div.stButton > button {{ color: black; }}
+            .main { background-color: #1e1e1e; color: white; }
+            div.stButton > button { color: black; }
         </style>
     """, unsafe_allow_html=True)
 
-# --- About / Contact Info ---
+# --- About / Contact ---
 if st.session_state.show_about:
     with st.expander("📘 About This App", expanded=True):
         st.markdown("""
         This ATS Resume Matcher helps compare your resume with job descriptions using **TF-IDF** and **Cosine Similarity**.
+        Upload your resume, and we’ll show the most relevant jobs or internships.
         """)
 
 if st.session_state.show_contact:
@@ -104,7 +107,7 @@ if st.session_state.show_contact:
         🔗 [LinkedIn](https://linkedin.com/in/your-link)
         """)
 
-# --- Load Models ---
+# --- Load Resources ---
 @st.cache_resource
 def load_vectorizer(): return joblib.load("vectorizer.pkl")
 
@@ -117,7 +120,7 @@ def load_job_dataset():
 vectorizer = load_vectorizer()
 career_data = load_job_dataset()
 
-# --- PDF Extractor ---
+# --- PDF Text Extraction ---
 def extract_text_from_pdf(uploaded_file):
     reader = PyPDF2.PdfReader(uploaded_file)
     return "".join([p.extract_text() or "" for p in reader.pages])
@@ -128,13 +131,12 @@ def get_ats_score(resume_text, job_description):
     similarity = cosine_similarity(vect_resume, vect_job)[0][0]
     return round(similarity * 100, 2)
 
-# --- Main UI ---
+# --- Main Layout ---
 col1, col2 = st.columns([1, 2])
 with col1:
     st.subheader("📤 Upload Your Resume")
     resume_file = st.file_uploader("PDF Only", type=["pdf"])
     resume_text = extract_text_from_pdf(resume_file) if resume_file else ""
-
     if resume_text:
         with st.expander("📄 View Resume Text"):
             st.text(resume_text[:3000])
@@ -148,16 +150,22 @@ with col2:
         if job_type == "Job":
             exp_type = st.radio("Experience Level", ["Fresher", "Experienced"])
             if "experience" in career_data.columns:
-                filtered_data = career_data[
-                    (career_data["type"].str.lower() == "job") &
-                    (career_data["experience"].str.lower() == ("fresher" if exp_type == "Fresher" else "experienced"))
-                ]
+                if exp_type == "Fresher":
+                    filtered_data = career_data[
+                        (career_data["type"].str.lower() == "job") &
+                        (career_data["experience"].str.lower() == "fresher")
+                    ]
+                else:
+                    filtered_data = career_data[
+                        (career_data["type"].str.lower() == "job") &
+                        (career_data["experience"].str.lower() != "fresher")
+                    ]
         else:
             filtered_data = career_data[career_data["type"].str.lower() == "internship"]
 
         if st.button("🔍 Match Resume to Roles"):
-            scores = []
             vect_resume = vectorizer.transform([resume_text])
+            scores = []
             for _, row in filtered_data.iterrows():
                 vect_job = vectorizer.transform([row["description"]])
                 sim = cosine_similarity(vect_resume, vect_job)[0][0]
@@ -181,22 +189,22 @@ with col2:
                 st.warning("No roles matched your resume.")
 
         st.subheader("📊 General ATS Score (Custom JD)")
-        with st.expander("📝 Paste JD"):
+        with st.expander("📝 Paste Job Description"):
             custom_jd = st.text_area("Enter job description")
             if st.button("🎯 Check ATS Score"):
                 if custom_jd.strip():
                     score = get_ats_score(resume_text, custom_jd)
                     st.success(f"✅ Match Score: **{score}%**")
                 else:
-                    st.warning("Job description is empty.")
+                    st.warning("Please enter a job description.")
     else:
-        st.warning("📌 Upload resume to begin.")
+        st.warning("📌 Please upload your resume to begin.")
 
 # --- Footer ---
 st.markdown("---")
 st.markdown(
     "<div style='text-align: center; font-size: 14px;'>"
     "Made with ❤️ by <b>Raunak Kumar</b> | © 2025<br>"
-    "For educational use only."
+    "This tool is for educational use only."
     "</div>", unsafe_allow_html=True
 )
