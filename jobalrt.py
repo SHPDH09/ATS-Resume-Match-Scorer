@@ -71,7 +71,7 @@ def log_visitor_info():
     df = pd.DataFrame(log_data)
 
     # ✅ Use a temporary folder for deployment-safe writing
-    log_file = "/tmp/visitor_logs.xlsx"  # or use .csv
+    log_file = "visitor_logs.xlsx"  # or use .csv
 
     if os.path.exists(log_file):
         old_df = pd.read_excel(log_file)
