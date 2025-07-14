@@ -3,3 +3,4 @@ pandas
 PyPDF2
 joblib
 scikit-learn
+openpyxl
