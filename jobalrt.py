@@ -78,7 +78,7 @@ def log_visitor_info():
         df = pd.concat([old_df, df], ignore_index=True)
 
     df.to_excel(log_file, index=False)  # requires openpyxl
-    st.success("✅ Visitor data stored successfully.")
+    st.success("Welcome To Our ATS")
 
 
 
