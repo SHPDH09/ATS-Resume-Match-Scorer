@@ -6,111 +6,10 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import os
 
-
 # --- Page config ---
 st.set_page_config(page_title="ATS Resume Match", layout="wide")
 
-# --- Custom Header (No Default Title) ---
-visit_count = update_visit_count()
-
-st.markdown("""
-    <style>
-        header {visibility: hidden;}
-        .custom-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background-color: #f0f2f6;
-            padding: 1rem 2rem;
-            border-radius: 10px;
-            margin-bottom: 20px;
-        }
-        .header-title {
-            font-size: 24px;
-            font-weight: bold;
-        }
-    </style>
-    <div class="custom-header">
-        <div class="header-title">📄 ATS Resume Match Scorer</div>
-        <div>
-            <form action="#" method="post">
-                <button type="submit" name="about">📘 About</button>
-                <button type="submit" name="contact">📬 Contact</button>
-            </form>
-        </div>
-    </div>
-    <div class="custom-header">
-        <div class="header-title">📄 ATS Resume Match Scorer</div>
-        <div>
-            <span style='font-size:16px; float:right;'>👀 Total Visits: <b>{visit_count}</b></span>
-        </div>
-    </div>
-""", unsafe_allow_html=True)
-
-# --- Session state for popups ---
-if "show_about" not in st.session_state:
-    st.session_state.show_about = False
-if "show_contact" not in st.session_state:
-    st.session_state.show_contact = False
-
-# --- Manual Toggle Buttons ---
-colA1, colA2, colA3 = st.columns([5, 1, 1])
-with colA2:
-    if st.button("📘 About"):
-        st.session_state.show_about = not st.session_state.show_about
-        st.session_state.show_contact = False
-with colA3:
-    if st.button("📬 Contact"):
-        st.session_state.show_contact = not st.session_state.show_contact
-        st.session_state.show_about = False
-
-# --- Theme Toggle ---
-theme = st.selectbox("🌗 Select Theme", ["Light", "Dark"])
-if theme == "Dark":
-    st.markdown(
-        """<style>
-            .main {
-                background-color: #1e1e1e;
-                color: white;
-            }
-            div.stButton > button {
-                color: black;
-            }
-        </style>""", unsafe_allow_html=True
-    )
-
-# --- About Popup ---
-if st.session_state.show_about:
-    with st.expander("📘 About This App", expanded=True):
-        st.markdown("""
-        This ATS Resume Matcher helps you compare your resume with job or internship descriptions using **TF-IDF** and **Cosine Similarity**.
-
-        🔍 Features:
-        - Upload PDF Resume
-        - Match with filtered roles
-        - General ATS score using custom JD
-        """)
-
-# --- Contact Popup ---
-if st.session_state.show_contact:
-    with st.expander("📬 Contact Me", expanded=True):
-        st.markdown("""
-        **👨‍💻 Developer:** Raunak Kumar  
-        📧 Email: raunakkumarjob@gmail.com  
-        🔗 [LinkedIn](https://linkedin.com/in/your-link)
-        """)
-
-# --- Load resources ---
-@st.cache_resource
-def load_vectorizer():
-    return joblib.load("vectorizer.pkl")
-
-@st.cache_data
-def load_job_dataset():
-    df = pd.read_csv("careers.csv")
-    df.columns = df.columns.str.strip().str.lower()
-    return df
-#--------------------------------------visitor counter----------------
+# --- Visitor Counter Function (define first) ---
 def update_visit_count():
     count_file = "visits.txt"
     if not os.path.exists(count_file):
@@ -124,7 +23,99 @@ def update_visit_count():
         f.truncate()
     return count
 
-# --- Resume Extractor ---
+# --- Count Visits ---
+visit_count = update_visit_count()
+
+# --- Custom Header ---
+st.markdown(f"""
+    <style>
+        header {{visibility: hidden;}}
+        .custom-header {{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #f0f2f6;
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }}
+        .header-title {{
+            font-size: 24px;
+            font-weight: bold;
+        }}
+    </style>
+    <div class="custom-header">
+        <div class="header-title">📄 ATS Resume Match Scorer</div>
+        <div>
+            <span style='font-size:16px;'>👀 Total Visits: <b>{visit_count}</b></span>
+        </div>
+    </div>
+""", unsafe_allow_html=True)
+
+# --- Session state ---
+if "show_about" not in st.session_state:
+    st.session_state.show_about = False
+if "show_contact" not in st.session_state:
+    st.session_state.show_contact = False
+
+# --- Toggle Buttons ---
+colA1, colA2, colA3 = st.columns([5, 1, 1])
+with colA2:
+    if st.button("📘 About"):
+        st.session_state.show_about = not st.session_state.show_about
+        st.session_state.show_contact = False
+with colA3:
+    if st.button("📬 Contact"):
+        st.session_state.show_contact = not st.session_state.show_contact
+        st.session_state.show_about = False
+
+# --- Theme ---
+theme = st.selectbox("🌗 Select Theme", ["Light", "Dark"])
+if theme == "Dark":
+    st.markdown("""
+        <style>
+            .main {
+                background-color: #1e1e1e;
+                color: white;
+            }
+            div.stButton > button {
+                color: black;
+            }
+        </style>""", unsafe_allow_html=True)
+
+# --- About ---
+if st.session_state.show_about:
+    with st.expander("📘 About This App", expanded=True):
+        st.markdown("""
+        This ATS Resume Matcher helps you compare your resume with job or internship descriptions using **TF-IDF** and **Cosine Similarity**.
+
+        🔍 Features:
+        - Upload PDF Resume
+        - Match with filtered roles
+        - General ATS score using custom JD
+        """)
+
+# --- Contact ---
+if st.session_state.show_contact:
+    with st.expander("📬 Contact Me", expanded=True):
+        st.markdown("""
+        **👨‍💻 Developer:** Raunak Kumar  
+        📧 Email: raunakkumarjob@gmail.com  
+        🔗 [LinkedIn](https://linkedin.com/in/your-link)
+        """)
+
+# --- Load vectorizer and job data ---
+@st.cache_resource
+def load_vectorizer():
+    return joblib.load("vectorizer.pkl")
+
+@st.cache_data
+def load_job_dataset():
+    df = pd.read_csv("careers.csv")
+    df.columns = df.columns.str.strip().str.lower()
+    return df
+
+# --- PDF Extractor ---
 def extract_text_from_pdf(uploaded_file):
     reader = PyPDF2.PdfReader(uploaded_file)
     text = ""
@@ -141,7 +132,7 @@ def get_ats_score(resume_text, job_description):
     similarity = cosine_similarity(vect_resume, vect_job)[0][0]
     return round(similarity * 100, 2)
 
-# --- Load data ---
+# --- Load Data ---
 vectorizer = load_vectorizer()
 career_data = load_job_dataset()
 
